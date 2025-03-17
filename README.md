@@ -25,7 +25,7 @@ VoxAi  is a voice-powered AI assistant built with Jaspr, providing intuitive voi
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/voxai.git
+   git clone https://github.com/chichimedamine/VoxAi.git
    cd voxai
    ```
 

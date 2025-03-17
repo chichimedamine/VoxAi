@@ -25,13 +25,15 @@ class Header extends StatelessComponent {
                 ]),
               ],
             ),
-            div(classes: "avatar", [
-              div(classes: "w-8 rounded-xl", [
-                img(
-                    alt: "github",
-                    src:
-                        "assets/images/github.png",
-                    classes: "h-8 w-8 rounded-xl")
+            div(classes: "github_img", [
+              a( href: "https://github.com/chichimedamine/VoxAi",  [
+                div(classes: "w-8 rounded-xl", [
+                  img(
+                      alt: "github",
+                      src:
+                          "assets/images/github.png",
+                      classes: "h-8 w-8 rounded-xl")
+                ]),
               ])
             ])
           ]),

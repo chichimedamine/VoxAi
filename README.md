@@ -15,7 +15,7 @@ VoxAi  is a voice-powered AI assistant built with Jaspr, providing intuitive voi
 - ⚡ Fast, client-side processing
 
 ## Getting Started
-
+Demo : https://magnificent-marshmallow-62fc4c.netlify.app/
 ### Prerequisites
 
 - Dart SDK (version 2.19 or higher)

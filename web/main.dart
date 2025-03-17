@@ -5,15 +5,14 @@
 // Imports the [App] component.
 import 'package:VoxAi/app.dart';
 import 'package:VoxAi/extension/extension.dart';
-// Client-specific jaspr import.
+
 import 'package:jaspr/browser.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 
-void main() {
+void main() async {
   // Attaches the [App] component to the <body> of the page.
   Extension().dispose();
   runApp(ProviderScope(
     child: App(),
   ));
-  // ApiService().getResponse("hello");
 }

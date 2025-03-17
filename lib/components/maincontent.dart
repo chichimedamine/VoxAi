@@ -56,13 +56,20 @@ Component cards(BuildContext context) {
 Component chatui(BuildContext context) {
   final invisibleChat = context.watch(invisibleChatProvider);
   final messages = context.watch(messagesProvider);
-  final response = context.watch(responseProvider);
+  final qwenResponse = context.watch(responseProvider);
+  final geminiResponse = context.watch(responseGeminiProvider);
+  final selectedModel = context.watch(selectedAIModelProvider);
+
+  // Check if there's a response based on the selected model
+  final hasResponse = selectedModel == "qwen" 
+      ? qwenResponse != null 
+      : geminiResponse != null;
 
   return div(
       classes:
           " $invisibleChat mx-auto  w-full h-1/2 flex flex-col space-y-4 overflow-y-auto p-2",
       [
-        if (response != null)
+        if (messages.isNotEmpty)  // Show messages if there are any, regardless of response
           for (var message in messages)
             div(
                 classes:
@@ -91,24 +98,24 @@ Component inputask(
   final error = context.watch(errorProvider);
 
   return div(classes: 'relative w-3/4 max-w-2xl mx-auto', [
-    div(classes: 'flex items-center gap-2', [
-      input(value: inputValue, classes: '''
-              w-full p-4 rounded-lg poppins-thin shadow-md 
+    input(value: inputValue, classes: '''
+              w-full p-4  rounded-lg poppins-thin shadow-md 
               pr-24 text-sm focus:outline-none focus:ring-2 
               focus:ring-black border border-gray-200
               ${isLoading ? 'opacity-50' : ''}
             ''', attributes: {
-        'placeholder': 'Type your message here...',
-      }, onChange: (value) {
-        context.read(inputValueProvider.notifier).state = value;
-      }, type: InputType.text, []),
-      button(
-          onClick: isLoading
-              ? null
-              : () async {
-                  try {
+      'placeholder': 'Type your message here...',
+    }, onChange: (value) {
+      context.read(inputValueProvider.notifier).state = value;
+    }, type: InputType.text, []),
+    button(
+        onClick: isLoading
+            ? null
+            : () async {
+                try {
+                  {
                     if (!Extension().isSpeaking()) Extension().dispose();
-                   
+
                     final currentInput = context.read(inputValueProvider);
                     if (currentInput.trim().isEmpty) return;
 
@@ -116,6 +123,8 @@ Component inputask(
                     context.read(invisibleContentProvider.notifier).state =
                         'invisible';
                     context.read(invisibleChatProvider.notifier).state = '';
+                    print(
+                        "state invisble chat : ${context.read(invisibleChatProvider.notifier).state}");
                     context.read(heightCardProvider.notifier).state =
                         'h-screen';
                     context.read(isLoadingProvider.notifier).state = true;
@@ -132,58 +141,85 @@ Component inputask(
                         .read(messagesProvider.notifier)
                         .update((state) => [...state, newMessage]);
 
+                    // Get selected AI model
+                    final selectedModel = context.read(selectedAIModelProvider);
+
                     // Generate response
                     final apiService = context.read(apiServiceProvider);
-                    final response =
-                        await apiService.generateResponse(currentInput);
+                    if (selectedModel == "qwen") {
+                      final response =
+                          await apiService.generateResponse(currentInput);
+                      context.read(responseProvider.notifier).state = response;
 
-                    // Update response state
-                    context.read(responseProvider.notifier).state = response;
+                      // Process response
+                      if (response.choices.isNotEmpty) {
+                        Extension().tts(response.choices[0].message.content);
 
-                    // Process response
-                    if (response.choices.isNotEmpty) {
-                      Extension().tts(response.choices[0].message.content);
+                        final aiMessage = Chatmessage(
+                          content: response.choices[0].message.content,
+                          isSent: true,
+                          timestamp: DateTime.now(),
+                        );
 
-                      final aiMessage = Chatmessage(
-                        content: response.choices[0].message.content,
-                        isSent: true,
-                        timestamp: DateTime.now(),
-                      );
-
-                      context
-                          .read(messagesProvider.notifier)
-                          .update((state) => [...state, aiMessage]);
+                        context
+                            .read(messagesProvider.notifier)
+                            .update((state) => [...state, aiMessage]);
+                      }
                     }
 
-                    // Clear input and loading state
-                    context.read(inputValueProvider.notifier).state = "";
-                    context.read(isLoadingProvider.notifier).state = false;
-                  } catch (e) {
-                    context.read(errorProvider.notifier).state =
-                        'Something went wrong. Please try again.';
-                    context.read(isLoadingProvider.notifier).state = false;
+                    if (selectedModel == "gemini") {
+                      final response =
+                          await apiService.generateGeminiResponse(currentInput);
+                      context.read(responseGeminiProvider.notifier).state =
+                          response;
+
+                      // Process response
+                      if (response.candidates.isNotEmpty) {
+                        Extension()
+                            .tts(response.candidates[0].content.parts[0].text!);
+
+                        final aiMessage = Chatmessage(
+                          content:
+                              response.candidates[0].content.parts[0].text!,
+                          isSent: true,
+                          timestamp: DateTime.now(),
+                        );
+                        context
+                            .read(messagesProvider.notifier)
+                            .update((state) => [...state, aiMessage]);
+                      }
+                    }
+
+                    // Update response state
                   }
-                },
-          classes: '''
-              absolute right-2 bg-black poppins-bold text-white px-3 py-2 rounded-full
+                  print("update loading");
+
+                  // Clear input and loading state
+                  context.read(inputValueProvider.notifier).state = "";
+                  context.read(isLoadingProvider.notifier).state = false;
+                } catch (e) {
+                  context.read(errorProvider.notifier).state =
+                      'Something went wrong. Please try again.';
+                  context.read(isLoadingProvider.notifier).state = false;
+                }
+              },
+        classes: '''
+              absolute right-2 top-1 bg-black poppins-bold text-white px-3 py-3 rounded-full
               text-base hover:bg-gray-800 transition-all duration-200
-              ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}
+              ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 shadow-lg'}
             ''',
-          disabled: isLoading,
-          [
-            isLoading
-                ? div(classes: 'flex items-center gap-2', [
-                    text('Loading'),
-                    div(
-                        classes:
-                            'animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent',
-                        [])
-                  ])
-                : text('Send')
-          ]),
-    ]),
-    if (error != null)
-      div(classes: 'text-red-500 text-sm mt-2 animate-fadeIn', [text(error)]),
+        disabled: isLoading,
+        [
+          isLoading
+              ? div(classes: 'flex items-center gap-2', [
+                  text('Loading'),
+                  div(
+                      classes:
+                          'animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent',
+                      [])
+                ])
+              : text('Send')
+        ]),
   ]);
 }
 
@@ -214,6 +250,66 @@ Component textwelcome() {
       ]);
 }
 
+Component toggleAi(BuildContext context) {
+  final selectedModel = context.watch(selectedAIModelProvider);
+
+  return div(classes: 'flex items-center justify-center space-x-2 mb-4', [
+    // Gemini option
+    div(classes: 'flex items-center', [
+      input(type: InputType.radio, attributes: {
+        'id': 'gemini',
+        'name': 'ai-model',
+        'value': 'gemini',
+        "checked": selectedModel == 'gemini' ? "checked" : ""
+      }, onChange: (_) {
+        context.read(selectedAIModelProvider.notifier).state = 'gemini';
+
+        // Ensure chat UI visibility is consistent when switching models
+        final messages = context.read(messagesProvider);
+        if (messages.isNotEmpty) {
+          context.read(invisibleChatProvider.notifier).state = '';
+          context.read(invisibleContentProvider.notifier).state = 'invisible';
+        }
+      }, classes: 'mr-1 cursor-pointer', []),
+      label(
+          attributes: {'for': 'gemini'},
+          classes:
+              'text-sm cursor-pointer poppins-regular ${selectedModel == "gemini" ? "text-black font-semibold" : "text-gray-600"}',
+          [text('Gemini')]),
+    ]),
+
+    // Qwen option
+    div(classes: 'flex items-center', [
+      input(type: InputType.radio, attributes: {
+        'id': 'qwen',
+        'name': 'ai-model',
+        'value': 'qwen',
+        'checked': selectedModel == 'qwen' ? 'checked' : '',
+      }, onChange: (_) {
+        context.read(selectedAIModelProvider.notifier).state = 'qwen';
+
+        // Ensure chat UI visibility is consistent when switching models
+        final messages = context.read(messagesProvider);
+        if (messages.isNotEmpty) {
+          context.read(invisibleChatProvider.notifier).state = '';
+          context.read(invisibleContentProvider.notifier).state = 'invisible';
+        }
+      }, classes: 'mr-1 cursor-pointer', []),
+      label(
+          attributes: {'for': 'qwen'},
+          classes:
+              'text-sm cursor-pointer poppins-regular ${selectedModel == "qwen" ? "text-black font-semibold" : "text-gray-600"}',
+          [text('Qwen')]),
+    ]),
+
+    // Current model indicator
+    div(classes: 'ml-2 text-xs bg-gray-200 px-2 py-1 rounded-full', [
+      text(
+          'Using ${selectedModel.substring(0, 1).toUpperCase()}${selectedModel.substring(1)}')
+    ]),
+  ]);
+}
+
 class MainContent extends StatelessComponent {
   const MainContent({super.key});
 
@@ -223,6 +319,7 @@ class MainContent extends StatelessComponent {
             'flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-r from-blue-100 via-sky-100 to-indigo-200',
         [
           textwelcome(),
+          toggleAi(context), // Added the AI toggle component
           chatui(context),
           cards(context),
           div(

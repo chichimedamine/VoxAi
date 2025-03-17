@@ -1,8 +1,11 @@
 // Provider for API service
 import 'package:VoxAi/model/chatmessage.dart';
 import 'package:VoxAi/model/deepseek.dart';
+import 'package:VoxAi/model/gemini.dart';
 import 'package:VoxAi/services/apiservice.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
+
+final selectedAIModelProvider = StateProvider<String>((ref) => 'qwen');
 
 final apiServiceProvider = Provider<ApiService>((ref) => ApiService());
 final errorProvider = StateProvider<String?>((ref) => null);
@@ -15,3 +18,5 @@ final isLoadingProvider = StateProvider<bool>((ref) => false);
 final messagesProvider = StateProvider<List<Chatmessage>>((ref) => []);
 
 final responseProvider = StateProvider<DeepSeekResponse?>((ref) => null);
+
+final responseGeminiProvider = StateProvider<GeminiResponse?>((ref) => null);

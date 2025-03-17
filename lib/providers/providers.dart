@@ -1,7 +1,7 @@
 // Provider for API service
 import 'package:VoxAi/model/chatmessage.dart';
 import 'package:VoxAi/model/deepseek.dart';
-import 'package:VoxAi/servies/apiservice.dart';
+import 'package:VoxAi/services/apiservice.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 
 final apiServiceProvider = Provider<ApiService>((ref) => ApiService());

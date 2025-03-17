@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   static const String apiKey =
-      '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';
+      '';
   static const String baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
   static const String model = "qwen/qwq-32b:free";
 //google/gemini-2.0-flash-lite-preview-02-05:free

@@ -107,6 +107,8 @@ Component inputask(
               ? null
               : () async {
                   try {
+                    if (!Extension().isSpeaking()) Extension().dispose();
+                   
                     final currentInput = context.read(inputValueProvider);
                     if (currentInput.trim().isEmpty) return;
 

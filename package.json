@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "jaspr serve",
-    "build": "jaspr build",
+    "build": " npm run development & jaspr build",
     "dev": "npm run development & jaspr serve ",
     "development": "tailwindcss -i ./web/assets/css/styles.tw.css -o ./web/assets/css/styles.css --config ./tailwind.config.js "
   },
